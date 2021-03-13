@@ -14,7 +14,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/consistent-cor
 
 ## 解决方案
 
-实现一个三五个节点的小集群，提供线性一致性的保证，同时支持失效容忍[1]。一个单独数据集群可以使用小的一致性集群管理元数据，采用类似于[租约（Lease）](https://martinfowler.com/articles/patterns-of-distributed-systems/time-bound-lease.html) 之类的原语在集群范围内进行决策。这样一来，数据集群就可以增长到很大的规模，但对于某些需要强一致性保证的动作，可以使用比较小的元数据集群。
+实现一个三五个节点的小集群，提供线性一致性的保证，同时支持失效容忍[1]。一个单独数据集群可以使用小的一致性集群管理元数据，采用类似于[租约（Lease）](lease.md) 之类的原语在集群范围内进行决策。这样一来，数据集群就可以增长到很大的规模，但对于某些需要强一致性保证的动作，可以使用比较小的元数据集群。
 
 
 ![一致性内核](../image/ConsistentCore.png)
@@ -145,7 +145,7 @@ private RequestOrResponse sendConnectRequest(SingleSocketChannel socketChannel) 
 
 在失效的场景下，客户端可以重新连接新的 领导者，重新发送请求。但是，如果这些请求在失效的领导者之前已经处理过了，这就有可能产生重复。因此，至关重要的一点是，服务器需要有一种机制，忽略重复的请求。[幂等接收者（Idempotent Receiver）](idempotent-receiver.md)模式就是用来实现重复检测的。
 
-使用[租约（Lease）](https://martinfowler.com/articles/patterns-of-distributed-systems/time-bound-lease.html)，可以在一组服务器上协调任务。同样的技术也可以用于实现分组成员信息和失效检测机制。
+使用[租约（Lease）](lease.md)，可以在一组服务器上协调任务。同样的技术也可以用于实现分组成员信息和失效检测机制。
 
 [状态监控（State Watch）](https://martinfowler.com/articles/patterns-of-distributed-systems/state-watch.html)，可以在元数据发生改变，或是基于时间的租约到期时，获得通知。
 

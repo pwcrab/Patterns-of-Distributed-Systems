@@ -15,7 +15,7 @@
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
 * [领导者和追随者（Leader and Followers）](content/leader-and-followers.md)
-* 租约（Lease）
+* [租约（Lease）](content/lease.md)
 * 低水位标记（Low-Water Mark）
 * [Quorum](content/quorum.md)
 * 请求管道（Request Pipeline）

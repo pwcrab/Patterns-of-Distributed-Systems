@@ -1,6 +1,12 @@
 # 租约（Lease）
 
+**原文**
+
+https://martinfowler.com/articles/patterns-of-distributed-systems/time-bound-lease.html
+
 使用有时间限制的租约协调集群节点的活动。
+
+**2021.1.13**
 
 ## 问题
 

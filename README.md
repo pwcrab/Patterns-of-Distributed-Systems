@@ -16,7 +16,7 @@
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
 * [领导者和追随者（Leader and Followers）](content/leader-and-followers.md)
 * [租约（Lease）](content/lease.md)
-* 低水位标记（Low-Water Mark）
+* [低水位标记（Low-Water Mark）](content/low-water-mark.md)
 * [Quorum](content/quorum.md)
 * 请求管道（Request Pipeline）
 * 分段日志（Segmented Log）

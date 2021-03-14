@@ -166,7 +166,7 @@ class ReplicatedKVStore…
 
 按客户端存储的请求不可能是永久保存的。有几种方式可以对请求进行过期处理。在 Raft 的[参考实现](https://github.com/logcabin/logcabin)中，客户端会保存一个单独的号码，以便记录成功收到应答的请求号。这个号码稍后会随着每个请求发送给服务器。这样，对于请求号小于这个号码的请求，服务器就可以安全地将其丢弃了。
 
-如果客户端能够保证只在接收到上一个请求的应答之后，再发起下一个请求，那么，服务器端一旦接收到来自这个客户端的请求，就可以放心地删除之前所有的请求。使用[请求管道（Request Pipeline）](https://martinfowler.com/articles/patterns-of-distributed-systems/request-pipeline.html)还会有个问题，可能有在途（in-flight）请求存在，也就是客户端没有收到应答。如果服务器端知道客户端能够接受的在途请求的最大数量，它就可以保留那么多的应答，删除其它的应答。比如说，[kafka](https://kafka.apache.org/) 的 producer 能够接受的最大在途请求数量是 5 个，因此，它最多保存 5 个之前的请求。
+如果客户端能够保证只在接收到上一个请求的应答之后，再发起下一个请求，那么，服务器端一旦接收到来自这个客户端的请求，就可以放心地删除之前所有的请求。使用[请求管道（Request Pipeline）](request-pipeline.md)还会有个问题，可能有在途（in-flight）请求存在，也就是客户端没有收到应答。如果服务器端知道客户端能够接受的在途请求的最大数量，它就可以保留那么多的应答，删除其它的应答。比如说，[kafka](https://kafka.apache.org/) 的 producer 能够接受的最大在途请求数量是 5 个，因此，它最多保存 5 个之前的请求。
 
 ```java
 class Session…

@@ -139,7 +139,7 @@ private RequestOrResponse sendConnectRequest(SingleSocketChannel socketChannel) 
 
 如果既有的领导者失效了，同样的技术将用于识别集群中新选出的领导者。
 
-一旦连接成功，客户端将同领导者服务器间维持一个[单一 Socket 通道（Single Socket Channel）](https://martinfowler.com/articles/patterns-of-distributed-systems/single-socket-channel.html)。
+一旦连接成功，客户端将同领导者服务器间维持一个[单一 Socket 通道（Single Socket Channel）](single-socket-channel.md)。
 
 #### 处理重复请求
 

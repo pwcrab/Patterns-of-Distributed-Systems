@@ -10,7 +10,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/request-pipeli
 
 ## 问题
 
-在集群里服务器间使用[单一 Socket 通道（Single Socket Channel）](https://martinfowler.com/articles/patterns-of-distributed-systems/single-socket-channel.html)进行通信，如果一个请求需要等到之前请求对应应答的返回，这种做法可能会导致性能问题。为了达到更好的吞吐和延迟，服务端的请求队列应该充分填满，确保服务器容量得到完全地利用。比如，当服务器端使用了[单一更新队列（Singular Update Queue）](https://martinfowler.com/articles/patterns-of-distributed-systems/singular-update-queue.html)，只要队列未填满，就可以继续接收更多的请求。如果只是一次只发一个请求，大多数服务器容量就毫无必要地浪费了。
+在集群里服务器间使用[单一 Socket 通道（Single Socket Channel）](single-socket-channel.md)进行通信，如果一个请求需要等到之前请求对应应答的返回，这种做法可能会导致性能问题。为了达到更好的吞吐和延迟，服务端的请求队列应该充分填满，确保服务器容量得到完全地利用。比如，当服务器端使用了[单一更新队列（Singular Update Queue）](https://martinfowler.com/articles/patterns-of-distributed-systems/singular-update-queue.html)，只要队列未填满，就可以继续接收更多的请求。如果只是一次只发一个请求，大多数服务器容量就毫无必要地浪费了。
 
 ## 解决方案
 

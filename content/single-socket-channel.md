@@ -1,4 +1,4 @@
-# 单一 Socket 通道
+# 单一 Socket 通道（Single Socket Channel）
 
 **原文**
 
@@ -14,7 +14,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/single-socket-
 
 ## 解决方案
 
-幸运的是，已经长期广泛使用的 [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) 机制已经提供了所有这些必要的特征。因此，我们只要确保追随者与其领导者之间都是通过单一的 Socket 通道进行通信，就可以进行我们所需的通信。然后，追随者再对来自领导者的更新进行序列化，将其送入[单一更新队列（Singular Update Queue）](https://martinfowler.com/articles/patterns-of-distributed-systems/singular-update-queue.html)。
+幸运的是，已经长期广泛使用的 [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) 机制已经提供了所有这些必要的特征。因此，我们只要确保追随者与其领导者之间都是通过单一的 Socket 通道进行通信，就可以进行我们所需的通信。然后，追随者再对来自领导者的更新进行序列化，将其送入[单一更新队列（Singular Update Queue）](singular-update-queue.md)。
 
 ![单一 Socket 通道](../image/single-socket-channel.png)
 <center>图1：单一 Socket 通道</center>
@@ -50,7 +50,7 @@ class SocketHandlerThread…
   }
 ```
 
-节点读取请求，将它们提交到[单一更新队列（Singular Update Queue）](https://martinfowler.com/articles/patterns-of-distributed-systems/singular-update-queue.html)中等待处理。一旦节点处理了写入的请求，它就将应答写回到 socket。
+节点读取请求，将它们提交到[单一更新队列（Singular Update Queue）](singular-update-queue.md)中等待处理。一旦节点处理了写入的请求，它就将应答写回到 socket。
 
 无论节点什么时候需要建立通信，它都会打开单一 Socket 连接，与对方通信的所有请求都会使用这个连接。
 

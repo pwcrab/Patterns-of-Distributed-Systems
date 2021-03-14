@@ -72,9 +72,11 @@ private List<WALSegment> getAllSegmentsContainingLogGreaterThan(Long startIndex)
             break; // break for the first segment with baseoffset less than startIndex
         }
     }
+
     if (openSegment.getBaseOffset() <= startIndex) {
         segments.add(openSegment);
     }
+
     return segments;
 }
 ```

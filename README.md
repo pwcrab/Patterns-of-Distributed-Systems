@@ -20,7 +20,7 @@
 * [Quorum](content/quorum.md)
 * [请求管道（Request Pipeline）](content/request-pipeline.md)
 * [分段日志（Segmented Log）](content/segmented-log.md)
-* 单一 Socket 通道（Single Socket Channel）
+* [单一 Socket 通道（Single Socket Channel）](content/single-socket-channel.md)
 * 单一更新队列（Singular Update Queue）
 * 状态监控（State Watch）
 * Versioned Values
@@ -53,6 +53,7 @@
 | round trip       | 往返          |
 | in-flight        | 在途          |
 | time to live     | 存活时间       |
+| head of line blocking | 队首阻塞  |
 
 
 

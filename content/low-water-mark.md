@@ -10,7 +10,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/low-watermark.
 
 ## 问题
 
-预写日志维护着持久化存储的每一次更新。随着时间的推移，它会无限增长。使用[分段日志](https://martinfowler.com/articles/patterns-of-distributed-systems/log-segmentation.html)，一次可以处理更小的文件，但如果不检查，磁盘总存储量会无限增长。
+预写日志维护着持久化存储的每一次更新。随着时间的推移，它会无限增长。使用[分段日志](segmented-log.md)，一次可以处理更小的文件，但如果不检查，磁盘总存储量会无限增长。
 
 ## 解决方案
 

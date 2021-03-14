@@ -19,7 +19,7 @@
 * [低水位标记（Low-Water Mark）](content/low-water-mark.md)
 * [Quorum](content/quorum.md)
 * [请求管道（Request Pipeline）](content/request-pipeline.md)
-* 分段日志（Segmented Log）
+* [分段日志（Segmented Log）](content/segmented-log.md)
 * 单一 Socket 通道（Single Socket Channel）
 * 单一更新队列（Singular Update Queue）
 * 状态监控（State Watch）

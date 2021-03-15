@@ -195,7 +195,7 @@ private void sendWatchResetRequest(String key) {
             JsonSerDes.serialize(new SetWatchRequest(key, lastWatchedEventIndex)), correlationId.getAndIncrement()));
 }
 ```
-服务器会给发送的每个事件编号。比如，如果服务器是[一致性内核（Consistent Core）](consistent-core.md)，它会以严格的顺序存储所有的状态变化，每个变化都用日志索引来编号，这在[预写日志（Write-Ahead Log）](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html)里已经讨论过了。这样一来，客户端要得到从特定索引开始的事件，就是可能实现的。
+服务器会给发送的每个事件编号。比如，如果服务器是[一致性内核（Consistent Core）](consistent-core.md)，它会以严格的顺序存储所有的状态变化，每个变化都用日志索引来编号，这在[预写日志（Write-Ahead Log）](write-ahead-log.md)里已经讨论过了。这样一来，客户端要得到从特定索引开始的事件，就是可能实现的。
 
 ### 来自键值存储的派生事件
 

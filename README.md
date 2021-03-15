@@ -24,7 +24,7 @@
 * [单一更新队列（Singular Update Queue）](content/singular-update-queue.md)
 * [状态监控（State Watch）](content/state-watch.md)
 * Versioned Values
-* 预写日志（Write-Ahead Log）
+* [预写日志（Write-Ahead Log）](content/write-ahead-log.md)
 
 ## 术语表
 

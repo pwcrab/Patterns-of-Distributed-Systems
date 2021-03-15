@@ -16,7 +16,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/generation.htm
 
 ## 解决方案
 
-维护一个单调递增的数字，表示服务器的世代。每次选出新的领导者，这个世代都应该递增。即便服务器重启，这个世代也应该是可用的，因此，它应该存储在[预写日志（Write-Ahead Log）](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html)每一个条目里。在[高水位标记（High-Water Mark）](high-water-mark.md)里，我们讨论过，追随者会使用这个信息找出日志中冲突的部分。
+维护一个单调递增的数字，表示服务器的世代。每次选出新的领导者，这个世代都应该递增。即便服务器重启，这个世代也应该是可用的，因此，它应该存储在[预写日志（Write-Ahead Log）](write-ahead-log.md)每一个条目里。在[高水位标记（High-Water Mark）](high-water-mark.md)里，我们讨论过，追随者会使用这个信息找出日志中冲突的部分。
 
 启动时，服务器要从日志中读取最后一个已知的世代。
 
@@ -49,7 +49,7 @@ follower (class ReplicationModule...)
 
 自此之后，领导者会在它发给追随者的每个请求中都包含这个世代信息。它也包含在发给追随者的每个[心跳（HeartBeat）](heartbeat.md)消息里，也包含在复制请求中。
 
-领导者也会把世代信息持久化到[预写日志（Write-Ahead Log）](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html)的每一个条目里。
+领导者也会把世代信息持久化到[预写日志（Write-Ahead Log）](write-ahead-log.md)的每一个条目里。
 
 ```java
 leader (class ReplicationModule...)

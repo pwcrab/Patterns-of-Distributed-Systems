@@ -60,7 +60,7 @@ class ReplicationModule…
 
 * 因为这个系统主要用于数据复制，哪台服务器可以赢得选举就要做出一些额外的限制。只有“最新”的服务器才能成为合法的领导者。比如说，在典型的基于共识的系统中，“最新”由两件事定义：
     * 最新的[世代时钟（Generation Clock）](generation-clock.md)
-    * [预写日志（Write-Ahead Log）](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html)的最新日志索引
+    * [预写日志（Write-Ahead Log）](write-ahead-log.md)的最新日志索引
 * 如果所有的服务器都是最新的，领导者可以根据下面的标准来选：
     * 一些实现特定的标准，比如，哪个服务器评级为更好或有更高的 ID（比如，Zab）
     * 如果要保证注意每台服务器一次只投一票，就看哪台服务器先于其它服务器启动选举。（比如，Raft）

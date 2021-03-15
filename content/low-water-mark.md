@@ -36,7 +36,7 @@ private void scheduleLogCleaning() {
 
 ### 基于快照的低水位标记
 
-大多数共识算法的实现，比如，Zookeeper 或 etcd（如同 RAFT 中所定义的），都实现了快照机制。在这个实现中，存储引擎会周期地打快照。已经成功应用的日志索引也要和快照一起存起来。可以参考[预写日志（Write-Ahead Log）](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html)模式中的简单键值存储的实现，快照可以像下面这样打：
+大多数共识算法的实现，比如，Zookeeper 或 etcd（如同 RAFT 中所定义的），都实现了快照机制。在这个实现中，存储引擎会周期地打快照。已经成功应用的日志索引也要和快照一起存起来。可以参考[预写日志（Write-Ahead Log）](write-ahead-log.md)模式中的简单键值存储的实现，快照可以像下面这样打：
 
 ```java
 public SnapShot takeSnapshot() {

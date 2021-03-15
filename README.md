@@ -22,7 +22,7 @@
 * [分段日志（Segmented Log）](content/segmented-log.md)
 * [单一 Socket 通道（Single Socket Channel）](content/single-socket-channel.md)
 * [单一更新队列（Singular Update Queue）](content/singular-update-queue.md)
-* 状态监控（State Watch）
+* [状态监控（State Watch）](content/state-watch.md)
 * Versioned Values
 * 预写日志（Write-Ahead Log）
 

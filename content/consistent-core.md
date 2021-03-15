@@ -147,7 +147,7 @@ private RequestOrResponse sendConnectRequest(SingleSocketChannel socketChannel) 
 
 使用[租约（Lease）](lease.md)，可以在一组服务器上协调任务。同样的技术也可以用于实现分组成员信息和失效检测机制。
 
-[状态监控（State Watch）](https://martinfowler.com/articles/patterns-of-distributed-systems/state-watch.html)，可以在元数据发生改变，或是基于时间的租约到期时，获得通知。
+[状态监控（State Watch）](state-watch.md)，可以在元数据发生改变，或是基于时间的租约到期时，获得通知。
 
 ## 示例
 

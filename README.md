@@ -9,21 +9,30 @@
 ### 模式
 
 * [一致性内核（Consistent Core）](content/consistent-core.md)
+* 固定分区（Fixed Partitions）
+* 追随者读取（Follower Reads）
 * [世代时钟（Generation Clock）](content/generation-clock.md)
-* Gossip Dissemination
+* Gossip 传播（Gossip Dissemination）
 * [心跳（HeartBeat）](content/heartbeat.md)
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
+* 混合时钟（Hybrid Clock）
+* Lamport 时钟（Lamport Clock）
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
+* 键与值（Key And Value）
 * [领导者和追随者（Leader and Followers）](content/leader-and-followers.md)
 * [租约（Lease）](content/lease.md)
 * [低水位标记（Low-Water Mark）](content/low-water-mark.md)
+* Paxos
 * [Quorum](content/quorum.md)
 * [请求管道（Request Pipeline）](content/request-pipeline.md)
+* 可复制日志（Replicated Log）
+* 批量请求（Request Batch）
 * [分段日志（Segmented Log）](content/segmented-log.md)
 * [单一 Socket 通道（Single Socket Channel）](content/single-socket-channel.md)
 * [单一更新队列（Singular Update Queue）](content/singular-update-queue.md)
 * [状态监控（State Watch）](content/state-watch.md)
-* Versioned Values
+* 版本向量（Version Vector）
+* 有版本的值（Versioned Values）
 * [预写日志（Write-Ahead Log）](content/write-ahead-log.md)
 
 ## 术语表

@@ -41,3 +41,85 @@ class ReplicatedKVStore…
       return response;
   }
 ```
+
+## 有版本键值的排序
+
+能够快速定位到最佳匹配的版本，这是一个重要的实现考量，所以，有版本的价值常按这种方式进行组织：使用版本号当做键值的后缀，形成一个自然排序。这样就可以保持一个与底层数据结构相适应的顺序。比如说，一个键值有两个版本，key1 和 key2，key1 就会排在 key2 前面。
+
+
+要存储有版本的键值与值，可以使用某种数据结构，比如，跳表，这样可以快速定位到最近的匹配版本上。使用 Java，可以像下面这样构建 MVCC 存储：
+
+```java
+class MVCCStore…
+
+  public class MVCCStore {
+      NavigableMap<VersionedKey, String> kv = new ConcurrentSkipListMap<>();
+  
+      public void put(VersionedKey key, String value) {
+          kv.put(key, value);
+  
+      }
+
+```
+
+为了使用 NavigableMap，有版本的键值可以像下面这样实现。它会实现一个比较器，允许键值的自然排序。
+
+```java
+class VersionedKey…
+
+  public class VersionedKey implements Comparable<VersionedKey> {
+      private String key;
+      private int version;
+  
+      public VersionedKey(String key, int version) {
+          this.key = key;
+          this.version = version;
+      }
+  
+      public String getKey() {
+          return key;
+      }
+  
+      public int getVersion() {
+          return version;
+      }
+  
+      @Override
+      public int compareTo(VersionedKey other) {
+          int keyCompare = this.key.compareTo(other.key);
+          if (keyCompare != 0) {
+              return keyCompare;
+          }
+          return Integer.compare(this.version, other.version);
+      }
+  }
+
+```
+
+这个实现允许通过 NavigableMap 的 API 获取特定版本的值。
+
+```java
+class MVCCStore…
+
+  public Optional<String> get(final String key, final int readAt) {
+      Map.Entry<VersionedKey, String> entry = kv.floorEntry(new VersionedKey(key, readAt));
+      return (entry == null)? Optional.empty(): Optional.of(entry.getValue());
+  }
+
+```
+
+看一个例子，一个键值有四个版本，存储的版本号分别是 1、2、3 和 5。根据客户端所使用版本去读取值，返回的是最接近匹配版本的键值。
+
+![读取特定版本](../image/versioned-key-read.png)
+<center>图1：读取特定版本</center>
+
+
+存储有特定键值和值的版本就会返回给客户端。客户端使用这个版本读取值。整体工作情况如下所示：
+
+versioned-value-logical-clock-put
+
+![Put 请求处理](../image/versioned-value-logical-clock-put.svg)
+<center>图2：Put 请求处理</center>
+
+![Put 请求处理](../image/versioned-value-logical-clock-get.svg)
+<center>图3：读取特定版本</center>

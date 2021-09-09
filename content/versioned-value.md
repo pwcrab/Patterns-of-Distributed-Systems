@@ -123,3 +123,77 @@ versioned-value-logical-clock-put
 
 ![Put 请求处理](../image/versioned-value-logical-clock-get.svg)
 <center>图3：读取特定版本</center>
+
+# 读取多个版本
+
+有时，客户端需要获取从某个给定版本号开始的所有版本。比如，在[状态监控](content/state-watch.md)中，客户端就要获取从指定版本开始的所有事件。
+
+集群节点可以多存一个索引结构，以便将一个键值所有的版本都存起来。
+
+```java
+class IndexedMVCCStore…
+
+  public class IndexedMVCCStore {
+      NavigableMap<String, List<Integer>> keyVersionIndex = new TreeMap<>();
+      NavigableMap<VersionedKey, String> kv = new TreeMap<>();
+
+      ReadWriteLock rwLock = new ReentrantReadWriteLock();
+      int version = 0;
+
+      public int put(String key, String value) {
+          rwLock.writeLock().lock();
+          try {
+              version = version + 1;
+              kv.put(new VersionedKey(key, version), value);
+
+              updateVersionIndex(key, version);
+
+              return version;
+          } finally {
+              rwLock.writeLock().unlock();
+          }
+      }
+
+      private void updateVersionIndex(String key, int newVersion) {
+          List<Integer> versions = getVersions(key);
+          versions.add(newVersion);
+          keyVersionIndex.put(key, versions);
+      }
+
+      private List<Integer> getVersions(String key) {
+          List<Integer> versions = keyVersionIndex.get(key);
+          if (versions == null) {
+              versions = new ArrayList<>();
+              keyVersionIndex.put(key, versions);
+          }
+          return versions;
+      }
+```
+
+这样，就可以提供一个客户端 API，读取从指定版本开始或者一个版本范围内的所有值。
+
+```java
+class IndexedMVCCStore…
+  public List<String> getRange(String key, final int fromRevision, int toRevision) {
+      rwLock.readLock().lock();
+      try {
+          List<Integer> versions = keyVersionIndex.get(key);
+          Integer maxRevisionForKey = versions.stream().max(Integer::compareTo).get();
+          Integer revisionToRead = maxRevisionForKey > toRevision ? toRevision : maxRevisionForKey;
+          SortedMap<VersionedKey, String> versionMap = kv.subMap(new VersionedKey(key, revisionToRead), new VersionedKey(key, toRevision));
+          getLogger().info("Available version keys " + versionMap + ". Reading@" + fromRevision + ":" + toRevision);
+          return new ArrayList<>(versionMap.values());
+
+      } finally {
+          rwLock.readLock().unlock();
+      }
+  }
+
+```
+
+有一点必须多加小心，根据某个索引进行相应的更新和读取时，需要使用恰当的锁。
+
+There is an alternate implementation possible to save a list of all the versioned values with the key, as used in Gossip Dissemination to avoid unnecessary state exchange.
+
+有一种替代的实现方案，就是将所有值的列表和键值存在一起，就像在Gossip 传播（Gossip Dissemination）中所用的一样，以[规避不必要的状态交换](https://martinfowler.com/articles/patterns-of-distributed-systems/gossip-dissemination.html#AvoidingUnnecessaryStateExchange)
+

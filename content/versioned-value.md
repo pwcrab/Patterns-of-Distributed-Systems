@@ -197,3 +197,16 @@ There is an alternate implementation possible to save a list of all the versione
 
 有一种替代的实现方案，就是将所有值的列表和键值存在一起，就像在Gossip 传播（Gossip Dissemination）中所用的一样，以[规避不必要的状态交换](https://martinfowler.com/articles/patterns-of-distributed-systems/gossip-dissemination.html#AvoidingUnnecessaryStateExchange)
 
+
+MVCC 与事务隔离
+
+数据库采用有版本的值实现[MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)和[事务隔离](https://en.wikipedia.org/wiki/Isolation_(database_systems))。
+
+并发控制，讨论的的是有多个并发请求访问同一数据时，该如何使用锁。当用锁对访问进行同步时，在持有锁的请求完成并释放掉锁之前，所有其它请求都会阻塞住。而使用了有版本的值，每个写请求都添加一条新的记录。这就可以用非阻塞数据结构存储值了。
+
+Transaction isolation levels, such as [snapshot-isolation], can be naturally implemented as well. When a client starts reading at a particular version, it's guaranteed to get the same value every time it reads from the database, even if there are concurrent write transactions which commit a different value between multiple read requests.
+
+事务隔离级别，比如[快照隔离](https://jepsen.io/consistency/models/snapshot-isolation)，实现起来就很自然了。当客户端在某个特定版本开始读取，它保证从数据库中每次读到的都是同一个值，即便存在并发写的事务，在多个读请求之间提交了不同的值。
+
+![读取特定版本](../image/snapshot-isolation.png)
+<center>图4：读取快照</center>

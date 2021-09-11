@@ -32,7 +32,7 @@
 * [单一更新队列（Singular Update Queue）](content/singular-update-queue.md)
 * [状态监控（State Watch）](content/state-watch.md)
 * 版本向量（Version Vector）
-* 有版本的值（Versioned Values）
+* [有版本的值（Versioned Values）](content/versioned-value.md)
 * [预写日志（Write-Ahead Log）](content/write-ahead-log.md)
 
 ## 术语表

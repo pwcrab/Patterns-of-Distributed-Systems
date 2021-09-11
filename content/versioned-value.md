@@ -210,3 +210,67 @@ Transaction isolation levels, such as [snapshot-isolation], can be naturally imp
 
 ![读取特定版本](../image/snapshot-isolation.png)
 <center>图4：读取快照</center>
+
+使用 RocksDb 当做存储引擎
+
+有一种很常见的数据存储的做法，就是使用 [rocksdb](https://rocksdb.org/docs/getting-started.html) 或类似的嵌入式存储引擎当做存储后端。比如，[etcd](https://etcd.io/) 使用 [boltdb](https://github.com/etcd-io/bbolt#using-keyvalue-pairs)，[cockroachdb](https://www.cockroachlabs.com/docs/stable/) 早期使用 [rocksdb](https://rocksdb.org/docs/getting-started.html)，现在它用的是 RocksDb的一个 Go 语言的克隆版，称为 [pebble](https://github.com/cockroachdb/pebble)。
+
+这些存储引擎提供的实现很适合存储有版本的值。在内部，它们使用了跳表，其方式就如上面讨论的那样，依赖于键值的顺序。当然，需要为键值排序提供一个订制的比较器。
+
+```java
+class VersionedKeyComparator…
+
+  public class VersionedKeyComparator extends Comparator {
+      public VersionedKeyComparator() {
+          super(new ComparatorOptions());
+      }
+
+      @Override
+      public String name() {
+          return "VersionedKeyComparator";
+      }
+
+      @Override
+      public int compare(Slice s1, Slice s2) {
+          VersionedKey key1 = VersionedKey.deserialize(ByteBuffer.wrap(s1.data()));
+          VersionedKey key2 = VersionedKey.deserialize(ByteBuffer.wrap(s2.data()));
+          return key1.compareTo(key2);
+      }
+  }
+
+```
+
+使用 [rocksdb](https://rocksdb.org/docs/getting-started.html) 可以这么做：
+
+```java
+class RocksDBMvccStore…
+
+  private final RocksDB db;
+
+  public RocksDBMvccStore(File cacheDir) throws RocksDBException {
+      Options options = new Options();
+      options.setKeepLogFileNum(30);
+      options.setCreateIfMissing(true);
+      options.setLogFileTimeToRoll(TimeUnit.DAYS.toSeconds(1));
+      options.setComparator(new VersionedKeyComparator());
+      db = RocksDB.open(options, cacheDir.getPath());
+  }
+
+  public void put(String key, int version, String value) throws RocksDBException {
+      VersionedKey versionKey = new VersionedKey(key, version);
+      db.put(versionKey.serialize(), value.getBytes());
+  }
+
+  public String get(String key, int readAtVersion) {
+      RocksIterator rocksIterator = db.newIterator();
+      rocksIterator.seekForPrev(new VersionedKey(key, readAtVersion).serialize());
+      byte[] valueBytes = rocksIterator.value();
+      return new String(valueBytes);
+  }
+```
+
+## 示例
+
+[etcd3] 使用的 MVCC 后端有一个单独的整数表示版本。
+
+[mongodb] 和 [cockroachdb] 使用的 MVCC 后端有一个混合逻辑时钟。

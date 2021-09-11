@@ -271,6 +271,6 @@ class RocksDBMvccStore…
 
 ## 示例
 
-[etcd3] 使用的 MVCC 后端有一个单独的整数表示版本。
+[etcd3](https://coreos.com/blog/etcd3-a-new-etcd.html) 使用的 MVCC 后端有一个单独的整数表示版本。
 
-[mongodb] 和 [cockroachdb] 使用的 MVCC 后端有一个混合逻辑时钟。
+[mongodb](https://www.mongodb.com/) 和 [cockroachdb](https://www.cockroachlabs.com/docs/stable/) 使用的 MVCC 后端有一个混合逻辑时钟。

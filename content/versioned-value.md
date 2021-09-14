@@ -4,8 +4,6 @@
 
 https://martinfowler.com/articles/patterns-of-distributed-systems/versioned-value.html
 
-Store every update to a value with a new version, to allow reading historical values.
-
 将值的每次更新连同新版本一同存储起来，以允许读取历史值。
 
 **2021.6.22**

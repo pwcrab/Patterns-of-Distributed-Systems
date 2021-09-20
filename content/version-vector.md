@@ -165,5 +165,123 @@ class VersionVector…
   public boolean descents(VersionVector other) {
       return other.compareTo(this) == Ordering.Before;
   }
-
 ```
+
+### 在键值存储中使用版本向量
+
+在键值存储中，可以像下面这样使用版本向量。这里需要一组有版本的值，这样就可以有多个并发的值了。
+
+```java
+class VersionVectorKVStore…
+
+  public class VersionVectorKVStore {
+      Map<String, List<VersionedValue>> kv = new HashMap<>();
+```
+
+当客户端要存储一个值时，它先用给定的键值读取到最新的已知版本。然后，根据键值选择集群的一个节点进行值的存储，这时客户端会回传已知的版本。请求流程如下图所示。有两个服务器分别叫 blue 和 green。对于“name”这个键值，green 就是主服务器。
+
+![](../image/versioned-vector-put.png)
+
+在无领导者复制的模式下，客户端或协调者节点会根据键值选取节点进行数据写入。根据键值所映射的集群主节点，版本向量会进行相应的更新。就复制而言，具有相同版本向量的值就可以复制到其它集群节点上。如果键值对应的集群节点不可用，就选择下一个节点。对于保存值的第一个集群节点而言，版本向量只能递增。所有其它节点保存的只是数据的副本。像[voldemort](https://www.project-voldemort.com/voldemort/)这样的数据库，递增版本向量的代码看上去是这样的：
+
+```java
+class ClusterClient…
+
+  public void put(String key, String value, VersionVector existingVersion) {
+      List<Integer> allReplicas = findReplicas(key);
+      int nodeIndex = 0;
+      List<Exception> failures = new ArrayList<>();
+      VersionedValue valueWrittenToPrimary = null;
+      for (; nodeIndex < allReplicas.size(); nodeIndex++) {
+          try {
+              ClusterNode node = clusterNodes.get(nodeIndex);
+              //the node which is the primary holder of the key value is responsible for incrementing version number.
+              valueWrittenToPrimary = node.putAsPrimary(key, value, existingVersion);
+              break;
+          } catch (Exception e) {
+              //if there is exception writing the value to the node, try other replica.
+              failures.add(e);
+          }
+      }
+
+      if (valueWrittenToPrimary == null) {
+          throw new NotEnoughNodesAvailable("No node succeeded in writing the value.", failures);
+      }
+
+      //Succeded in writing the first node, copy the same to other nodes.
+      nodeIndex++;
+      for (; nodeIndex < allReplicas.size(); nodeIndex++) {
+          ClusterNode node = clusterNodes.get(nodeIndex);
+          node.put(key, valueWrittenToPrimary);
+      }
+  }
+```
+
+充当主节点的节点会递增版本号。
+
+```java
+public VersionedValue putAsPrimary(String key, String value, VersionVector existingVersion) {
+    VersionVector newVersion = existingVersion.increment(nodeId);
+    VersionedValue versionedValue = new VersionedValue(value, newVersion);
+    put(key, versionedValue);
+    return versionedValue;
+}
+
+public void put(String key, VersionedValue value) {
+    versionVectorKvStore.put(key, value);
+}
+```
+
+从上面的代码可以看出，不同的客户端可以在不同的节点上更新相同的键值，比如，当客户端无法触达某个特定节点时。这就会造成一种情况，不同的节点有不同的值，根据它们的版本向量，可以认为这些值是“并发的”。
+
+如下图所示，client1 和 client2 都在尝试写入“name”这个键值。如果 client1 无法写入到 green 这个服务器，green 服务器就会丢掉 client1 写入的值。当 client2 尝试写入但无法连接到 blue 服务器，它就会写入到 green 服务器。“name”这个键值的版本向量就反映出 blue 和 green 两个服务器存在并发写入。
+
+![在不同副本上的并发更新](../image/vector-clock-concurrent-updates.png)
+<center>图2：在不同副本上的并发更新</center>
+
+Therefore the version vector based storage keeps multiple versions for any key, when the versions are considered concurrent.
+
+因此，当认为版本是并发的时候，基于存储的版本向量对于任何键值都会持有多个版本。
+
+```java
+class VersionVectorKVStore…
+
+  public void put(String key, VersionedValue newValue) {
+      List<VersionedValue> existingValues = kv.get(key);
+      if (existingValues == null) {
+          existingValues = new ArrayList<>();
+      }
+
+      rejectIfOldWrite(key, newValue, existingValues);
+      List<VersionedValue> newValues = merge(newValue, existingValues);
+      kv.put(key, newValues);
+  }
+
+  //If the newValue is older than existing one reject it.
+  private void rejectIfOldWrite(String key, VersionedValue newValue, List<VersionedValue> existingValues) {
+      for (VersionedValue existingValue : existingValues) {
+          if (existingValue.descendsVersion(newValue)) {
+              throw new ObsoleteVersionException("Obsolete version for key '" + key
+                      + "': " + newValue.versionVector);
+          }
+      }
+  }
+
+  //Merge new value with existing values. Remove values with lower version than the newValue.
+  //If the old value is neither before or after (concurrent) with the newValue. It will be preserved
+  private List<VersionedValue> merge(VersionedValue newValue, List<VersionedValue> existingValues) {
+      List<VersionedValue> retainedValues = removeOlderVersions(newValue, existingValues);
+      retainedValues.add(newValue);
+      return retainedValues;
+  }
+
+  private List<VersionedValue> removeOlderVersions(VersionedValue newValue, List<VersionedValue> existingValues) {
+      List<VersionedValue> retainedValues = existingValues
+              .stream()
+              .filter(v -> !newValue.descendsVersion(v)) //keep versions which are not directly dominated by newValue.
+              .collect(Collectors.toList());
+      return retainedValues;
+  }
+```
+
+如果从多个节点中进行读取时，检测到了并发值，就会抛出错误，这就要允许客户端解决冲突了。

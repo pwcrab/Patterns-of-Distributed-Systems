@@ -63,6 +63,7 @@
 | in-flight        | 在途          |
 | time to live     | 存活时间       |
 | head of line blocking | 队首阻塞  |
+| coordinator | 协调者 |
 
 
 

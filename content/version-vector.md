@@ -182,7 +182,7 @@ class VersionVectorKVStore…
 
 ![](../image/versioned-vector-put.png)
 
-在无领导者复制的模式下，客户端或协调者节点会根据键值选取节点进行数据写入。根据键值所映射的集群主节点，版本向量会进行相应的更新。就复制而言，具有相同版本向量的值就可以复制到其它集群节点上。如果键值对应的集群节点不可用，就选择下一个节点。对于保存值的第一个集群节点而言，版本向量只能递增。所有其它节点保存的只是数据的副本。像[voldemort](https://www.project-voldemort.com/voldemort/)这样的数据库，递增版本向量的代码看上去是这样的：
+在无领导者复制的模式下，客户端或协调者节点会根据键值选取节点进行数据写入。根据键值所映射的集群主节点，版本向量会进行相应的更新。就复制而言，具有相同版本向量的值就可以复制到其它集群节点上。如果键值对应的集群节点不可用，就选择下一个节点。对于保存值的第一个集群节点而言，版本向量只能递增。所有其它节点保存的只是数据的副本。像 [voldemort](https://www.project-voldemort.com/voldemort/) 这样的数据库，递增版本向量的代码看上去是这样的：
 
 ```java
 class ClusterClient…
@@ -285,3 +285,99 @@ class VersionVectorKVStore…
 ```
 
 如果从多个节点中进行读取时，检测到了并发值，就会抛出错误，这就要允许客户端解决冲突了。
+
+#### 解决冲突
+
+如果不同的副本返回了多个版本，向量时钟比较可以检测出最新的值。
+
+```java
+class ClusterClient…
+
+  public List<VersionedValue> get(String key) {
+      List<Integer> allReplicas = findReplicas(key);
+
+      List<VersionedValue> allValues = new ArrayList<>();
+      for (Integer index : allReplicas) {
+          ClusterNode clusterNode = clusterNodes.get(index);
+          List<VersionedValue> nodeVersions = clusterNode.get(key);
+
+          allValues.addAll(nodeVersions);
+      }
+
+      return latestValuesAcrossReplicas(allValues);
+  }
+
+  private List<VersionedValue> latestValuesAcrossReplicas(List<VersionedValue> allValues) {
+      List<VersionedValue> uniqueValues = removeDuplicates(allValues);
+      return retainOnlyLatestValues(uniqueValues);
+  }
+
+  private List<VersionedValue> retainOnlyLatestValues(List<VersionedValue> versionedValues) {
+      for (int i = 0; i < versionedValues.size(); i++) {
+          VersionedValue v1 = versionedValues.get(i);
+          versionedValues.removeAll(getPredecessors(v1, versionedValues));
+      }
+      return versionedValues;
+  }
+
+  private List<VersionedValue> getPredecessors(VersionedValue v1, List<VersionedValue> versionedValues) {
+      List<VersionedValue> predecessors = new ArrayList<>();
+      for (VersionedValue v2 : versionedValues) {
+          if (!v1.sameVersion(v2) && v1.descendsVersion(v2)) {
+              predecessors.add(v2);
+          }
+      }
+      return predecessors;
+  }
+
+  private List<VersionedValue> removeDuplicates(List<VersionedValue> allValues) {
+      return allValues.stream().distinct().collect(Collectors.toList());
+  }
+```
+
+当有并发的更新时，仅仅根据版本向量做冲突解决是不够的。因此，很重要的一点是，由客户端提供应用特定的冲突解决器（Conflict Resolver）。客户端在读取值的时候提供一个冲突解决器。
+
+```java
+public interface ConflictResolver {
+    VersionedValue resolve(List<VersionedValue> values);
+}
+class ClusterClient…
+
+  public VersionedValue getResolvedValue(String key, ConflictResolver resolver) {
+      List<VersionedValue> versionedValues = get(key);
+      return resolver.resolve(versionedValues);
+  }
+```
+
+比如，[riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html)就允许提供冲突解决器，就像这里解释的那样。
+
+##### 最后写入胜（Last Write Wins， LWW）的冲突解决
+
+虽然版本向量允许检测不同服务器组的并发写入，但在产生冲突的情况下，其本身并不能帮助给客户端提供识别出选择哪个值。解决问题的责任在客户端身上。有时，客户端倾向于让键值存储根据时间戳来解决冲突。虽然通过跨服务器的时间戳存在一些已知的问题，但这种方式胜在简单，使其成为了客户端的首选方案，即便是由于跨服务器时间戳的问题，存在丢失一些更新的风险。它们完全要依赖于像 NTP 这样的服务得到良好的配置，能够跨集群工作正常。像 [riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html) 和 [voldemort](https://www.project-voldemort.com/voldemort/) 这样的数据库允许用户选择“最后写入胜”的冲突解决策略。
+
+要支持 LWW 冲突解决，每个值写入时就要带上时间戳。
+
+```java
+class TimestampedVersionedValue…
+
+  class TimestampedVersionedValue {
+      String value;
+      VersionVector versionVector;
+      long timestamp;
+
+      public TimestampedVersionedValue(String value, VersionVector versionVector, long timestamp) {
+          this.value = value;
+          this.versionVector = versionVector;
+          this.timestamp = timestamp;
+      }
+```
+
+读取值时，客户端可以时间戳获取最新的值。在这种情况下，版本向量就完全忽略了。
+
+```java
+class ClusterClient…
+
+  public Optional<TimestampedVersionedValue> getWithLWWW(List<TimestampedVersionedValue> values) {
+      return values.stream().max(Comparator.comparingLong(v -> v.timestamp));
+  }
+```

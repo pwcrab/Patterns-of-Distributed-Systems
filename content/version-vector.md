@@ -237,7 +237,7 @@ public void put(String key, VersionedValue value) {
 如下图所示，client1 和 client2 都在尝试写入“name”这个键值。如果 client1 无法写入到 green 这个服务器，green 服务器就会丢掉 client1 写入的值。当 client2 尝试写入但无法连接到 blue 服务器，它就会写入到 green 服务器。“name”这个键值的版本向量就反映出 blue 和 green 两个服务器存在并发写入。
 
 ![在不同副本上的并发更新](../image/vector-clock-concurrent-updates.png)
-<center>图2：在不同副本上的并发更新</center>
+<center>图 2：在不同副本上的并发更新</center>
 
 Therefore the version vector based storage keeps multiple versions for any key, when the versions are considered concurrent.
 
@@ -391,4 +391,15 @@ class ClusterClient…
 考虑如下图所示的场景。两个节点，blue 和 green，都拥有键值“name”对应的值。green 节点有最新的版本，其版本向量为[blue: 1, green:1]。从 blue 和 green 两个副本进行值的读取时，二者可以进行比较，找出哪个节点缺少了最新的版本，然后，向这个集群节点发出一个带有最新版本的更新请求。
 
 ![读取修复](../image/read-repair.png)
-<center>图3：读取修复</center>
+<center>图 3：读取修复</center>
+
+##### 允许同一集群节点并发更新
+
+有这样一种可能性，两个客户端并发写入同一个节点。在上面所示的默认实现中，第二个写入请求会被拒绝。在这种情况下，每个集群节点一个版本号的基本实现是不够的。
+
+考虑下面这种场景。两个客户端尝试更新同样的键值，第二个客户端会得到一个异常，因为在它的更新请求中传递的版本号是过期的。
+
+![读取修复](../image/concurrent-update-with-server-versions.png)
+<center>图 4：两个客户端并发更新同一键值</center>
+
+像 [riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html) 这样的数据库会给客户端一些灵活性，允许这样的并发写请求，倾向于不给错误应答。

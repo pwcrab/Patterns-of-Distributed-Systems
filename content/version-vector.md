@@ -403,3 +403,26 @@ class ClusterClient…
 <center>图 4：两个客户端并发更新同一键值</center>
 
 像 [riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html) 这样的数据库会给客户端一些灵活性，允许这样的并发写请求，倾向于不给错误应答。
+
+###### 使用客户端 ID 代替服务端 ID
+
+如果集群的每个客户端都有一个唯一的 ID，就可以使用客户端 ID。每个客户端 ID 对应存储一个版本号。每次客户端写入一个值，它会先读取既有的版本，然后递增同客户端 ID 关联的数字，再写回服务器。
+
+```java
+class ClusterClient…
+
+  private VersionedValue putWithClientId(String clientId, int nodeIndex, String key, String value, VersionVector version) {
+      ClusterNode node = clusterNodes.get(nodeIndex);
+      VersionVector newVersion = version.increment(clientId);
+      VersionedValue versionedValue = new VersionedValue(value, newVersion);
+      node.put(key, versionedValue);
+      return versionedValue;
+  }
+```
+
+因为每个客户端递增的是自己的计数器，并发写会在服务器上创建出自己的兄弟值（sibling value），但并发写却不会失败。
+
+上面提及的场景，第二个客户端出现错误，其运作方式如下：
+
+![两个客户端并发更新同一键值](../image/concurrent-update-with-client-versions.png)
+<center>图 5：两个客户端并发更新同一键值</center>

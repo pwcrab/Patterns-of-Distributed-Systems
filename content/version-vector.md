@@ -426,3 +426,17 @@ class ClusterClient…
 
 ![两个客户端并发更新同一键值](../image/concurrent-update-with-client-versions.png)
 <center>图 5：两个客户端并发更新同一键值</center>
+
+###### 点状版本向量
+
+基于客户端 ID 的版本向量的一个主要问题是，版本向量的大小直接依赖于客户端的数量。这会导致在一段时间内，集群节点为某个给定的键值积累许多并发值。这个问题成为兄弟爆炸。为了解决这个问题，并依然允许基于集群节点的版本向量，[riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html) 使用了一种版本向量的变体，称为[点状版本向量](https://riak.com/posts/technical/vector-clocks-revisited-part-2-dotted-version-vectors/index.html)。
+
+## 样例
+
+[voldemort](https://www.project-voldemort.com/voldemort/) 按照这里描述的方式使用版本向量，其采用的基于时间戳的最后写入胜的冲突解决方案。
+
+[riak] 开始采用基于客户端 ID 的版本向量，但是，迁移到基于集群节点的版本向量，最终是点状版本向量。Riak 也支持基于系统时间戳的最后写入胜冲突解决方案。
+
+[cassandra] does not use version vectors, It supports only last write wins conflict resolution based on system timestamp.
+
+[cassandra](http://cassandra.apache.org/) 并不使用版本向量，它只支持基于系统时间戳的最后写入胜的冲突解决方案。

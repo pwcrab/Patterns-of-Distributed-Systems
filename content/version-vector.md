@@ -83,7 +83,8 @@ class VersionedValue…
 
 下面是一些比较的样例。
 
-||||
+|||
+|---|---|---|
 | {blue:2, green:1} | 大于 | {blue:1, green:1}|
 | {blue:2, green:1} | 并存 | {blue:1, green:2}|
 | {blue:1, green:1, red: 1} | 大于 | {blue:1, green:1}|

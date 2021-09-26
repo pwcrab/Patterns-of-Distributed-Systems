@@ -83,7 +83,7 @@ class VersionedValue…
 
 下面是一些比较的样例。
 
-|||
+||||
 |---|---|---|
 | {blue:2, green:1} | 大于 | {blue:1, green:1}|
 | {blue:2, green:1} | 并存 | {blue:1, green:2}|
@@ -441,3 +441,5 @@ class ClusterClient…
 [cassandra] does not use version vectors, It supports only last write wins conflict resolution based on system timestamp.
 
 [cassandra](http://cassandra.apache.org/) 并不使用版本向量，它只支持基于系统时间戳的最后写入胜的冲突解决方案。
+
+

@@ -83,8 +83,6 @@ class CausalKVStoreTest…
   }
 ```
 
-The cluster client or a co-ordinating cluster node can also track latencies observed with cluster nodes. It can send period heartbeats to capture the latencies, and use that to pick up a follower with minimum latency. To do a more fair selection, products like [mongodb] or [cockroachdb] calculate latencies as a moving average. Cluster nodes generally maintain a Single Socket Channel to communicate with other cluster nodes. Single Socket Channel needs a HeartBeat to keep the connection alive. So capturing latencies and calculating the moving average can be easily implemented.
-
 集群客户端或协调的集群节点也会追踪其同集群节点之间可观察的延迟。它可以发送周期性的心跳来获取延迟，并根据它选出延迟最小的追随者。为了做一个更公平的选择，像 [mongodb](https://www.mongodb.com/) 或 [cockroachdb](https://www.cockroachlabs.com/docs/stable/) 这样的产品会把延迟当做滑动平均来计算。集群节点一般会同其它集群节点之间维护一个[单一 Socket 通道（Single Socket Channel）](single-socket-channel.md)进行通信。单一 Socket 通道（Single Socket Channel）会使用心跳（HeartBeat）进行连接保活。因此，获取延迟和计算滑动移动平均就可以很容易地实现。
 
 ```java
@@ -176,3 +174,9 @@ class ClusterClient…
       return latencyMap.containsKey(r1) && latencyMap.containsKey(r2);
   }
 ```
+
+### 断连或缓慢的追随者
+
+追随者可能会与领导者之间失去联系，停止获得更新。在某些情况下，追随者可能会受到慢速磁盘的影响，阻碍整个的复制过程，这会导致追随者滞后于领导者。追随者追踪到其是否有一段时间没有收到领导者的消息，在这种情况下，可以停止对用户请求进行服务。
+
+比如，像 [mongodb](https://www.mongodb.com/) 这样的产品会选择带有[最大可接受滞后时间（maximum allowed lag time）](https://docs.mongodb.com/manual/core/read-preference-staleness/#std-label-replica-set-read-preference-max-staleness)的副本。如果副本滞后于领导者超过了这个最大时间，就不会选择它继续对用户请求提供服务。在 [kafka](https://kafka.apache.org/) 中，如果追随者检测到消费者请求的偏移量过大，它就会给出一个 OFFSET_OUT_OF_RANGE 的错误。我们就预期消费者会与领导者进行通信。

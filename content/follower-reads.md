@@ -180,3 +180,81 @@ class ClusterClient…
 追随者可能会与领导者之间失去联系，停止获得更新。在某些情况下，追随者可能会受到慢速磁盘的影响，阻碍整个的复制过程，这会导致追随者滞后于领导者。追随者追踪到其是否有一段时间没有收到领导者的消息，在这种情况下，可以停止对用户请求进行服务。
 
 比如，像 [mongodb](https://www.mongodb.com/) 这样的产品会选择带有[最大可接受滞后时间（maximum allowed lag time）](https://docs.mongodb.com/manual/core/read-preference-staleness/#std-label-replica-set-read-preference-max-staleness)的副本。如果副本滞后于领导者超过了这个最大时间，就不会选择它继续对用户请求提供服务。在 [kafka](https://kafka.apache.org/) 中，如果追随者检测到消费者请求的偏移量过大，它就会给出一个 OFFSET_OUT_OF_RANGE 的错误。我们就预期消费者会与领导者进行通信。
+
+### 读自己写
+
+从追随者服务器读取可能会有问题，当客户端写入一些东西，然后立即尝试读取它时，即便是这样常规的场景，也可能给出令人吃惊的结果。
+
+考虑这样一个情况，一个客户端注意到一些书籍数据有误，比如，"title": "Nitroservices"。通过一次写操作，它把数据修正成 "title": "Microservices"，这个数据要发到领导者那里。然后，这个客户端要立即读取这个值，但是，这个读的请求到了追随者，也许这个追随者还没有更新。
+
+![图 2：从追随者读取陈旧的值](../image/follower-reads-stale-data.png)
+<center>图 2：从追随者读取陈旧的值</center>
+
+This can be a common problem. For example, untill very recently Amazon S3 did not prevent this.
+
+这可能是个常见的问题。比如，[直到最近](https://aws.amazon.com/about-aws/whats-new/2020/12/amazon-s3-now-delivers-strong-read-after-write-consistency-automatically-for-all-applications/)，Amazon 的 S3 也并没有完全阻止这个问题。
+
+为了解决这个问题，每次写入时，服务器不仅存储新值，还有存储一个单调递增的版本戳。这个版本戳可以是[高水位标记（High-Water Mark）](high-water-mark.md)或是[混合时钟（Hybrid Clock）](hybrid-clock.md)。然后，如果客户端希望稍后读取该值的话，它就把这个版本戳当做读取请求的一部分。如果读取请求到了追随者那里，它就会检查其存储的值，看它是等于或晚于请求的版本戳。如果不是，它就会等待，直到有了最新的版本，再返回该值。通过这种做法，这个客户端总会读取与它写入一直的值——这种做法通常称为“读自己写”的一致性。
+
+请求流程如下所示。为了修正一个写错的值，"title": "Microservices" 写到了领导者。在返回给客户端的应答中，领导者返回版本 2。当客户端尝试读取 "title" 的值时，它会在请求中带上版本 2。接收到这个请求的追随者服务器会检查自己的版本号是否是最新的。因为追随者的版本号还是 1，它就会等待，知道从领导者那里获取那个版本。一旦获得匹配（更晚的）版本，它就完成这个读取请求，返回值 "Microservices"。
+
+![图 3：在追随者读自己写](../image/versioned-key-read-your-writes.png)
+<center>图 3：在追随者读自己写</center>
+
+键值存储的代码如下所示。值得注意的是，追随者可能落后太多，或者已经与领导者失去连接。因此，它不会无限地等待。有一个配置的超时值，如果追随者无法在超时时间内得到更新，它会给客户端返回一个错误的应答。客户端之后尝试从其他追随者那里读取。
+
+```java
+class ReplicatedKVStore…
+
+  Map<Integer, CompletableFuture> waitingRequests = new ConcurrentHashMap<>();
+  public CompletableFuture<Optional<String>> get(String key, int atVersion) {
+      if(this.server.serverRole() == ServerRole.FOLLOWING) {
+          //check if we have the version with us;
+          if (!isVersionUptoDate(atVersion)) {
+              //wait till we get the latest version.
+              CompletableFuture<Optional<String>> future = new CompletableFuture<>();
+              //Timeout if version does not progress to required version
+              //before followerWaitTimeout ms.
+              future.orTimeout(config.getFollowerWaitTimeoutMs(), TimeUnit.MILLISECONDS);
+              waitingRequests.put(atVersion, future);
+              return future;
+          }
+      }
+      return CompletableFuture.completedFuture(mvccStore.get(key, atVersion));
+  }
+
+  private boolean isVersionUptoDate(int atVersion) {
+      Optional<Integer> maxVersion = mvccStore.getMaxVersion();
+      return maxVersion.map(v -> v >= atVersion).orElse(false);
+  }
+```
+
+一旦键值存储的内容前进到客户端请求的版本，它就可以给客户端发送应答了。
+
+```java
+class ReplicatedKVStore…
+
+  private Response applyWalEntry(WALEntry walEntry) {
+      Command command = deserialize(walEntry);
+      if (command instanceof SetValueCommand) {
+          return applySetValueCommandsAndCompleteClientRequests((SetValueCommand) command);
+      }
+      throw new IllegalArgumentException("Unknown command type " + command);
+  }
+
+  private Response applySetValueCommandsAndCompleteClientRequests(SetValueCommand setValueCommand) {
+      getLogger().info("Setting key value " + setValueCommand);
+      version = version + 1;
+      mvccStore.put(new VersionedKey(setValueCommand.getKey(), version), setValueCommand.getValue());
+      completeWaitingFuturesIfFollower(version, setValueCommand.getValue());
+      Response response = Response.success(version);
+      return response;
+  }
+
+  private void completeWaitingFuturesIfFollower(int version, String value) {
+      CompletableFuture completableFuture = waitingRequests.remove(version);
+      if (completableFuture != null) {
+          completableFuture.complete(Optional.of(value));
+      }
+  }
+```

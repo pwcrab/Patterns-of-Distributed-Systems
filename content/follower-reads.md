@@ -258,3 +258,7 @@ class ReplicatedKVStore…
       }
   }
 ```
+
+### 线性读
+
+有时，读取请求需要获取最新的可用数据，复制的滞后是无法容忍的。在这种情况下，读取请求需要重定向到领导者。这是一个常见的设计问题，通常由[一致性内核（Consistent Core）](consistent-core.md)来解决。

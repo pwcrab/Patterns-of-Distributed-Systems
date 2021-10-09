@@ -262,3 +262,13 @@ class ReplicatedKVStore…
 ### 线性读
 
 有时，读取请求需要获取最新的可用数据，复制的滞后是无法容忍的。在这种情况下，读取请求需要重定向到领导者。这是一个常见的设计问题，通常由[一致性内核（Consistent Core）](consistent-core.md)来解决。
+
+## 示例
+
+[neo4j](https://neo4j.com/docs/operations-manual/current/clustering/) 允许建立[因果集群（causal clusters）](https://neo4j.com/docs/operations-manual/current/clustering-advanced/lifecycle/#causal-clustering-lifecycle)。每次写操作会返回一个书签，在读取副本上执行查询时会返回这个书签。这个书签会确保客户端总能获得写在书签处的值。
+
+[mongodb](https://www.mongodb.com/) 会在其副本集中保持[因果一致性（causal consistency）](https://docs.mongodb.com/manual/core/causal-consistency-read-write-concerns/)。写操作会返回一个操作时间（operationTime）；这个时间会在随后的读请求中传递，以确保读请求能够返回这个读请求之前写入的数据。
+
+[cockroachdb](https://www.cockroachlabs.com/docs/stable/) 允许客户端从[追随者服务器](https://www.cockroachlabs.com/docs/v20.2/follower-reads.html)上进行读取。领导者服务器会在写操作完成之后发布最新的时间戳，称之为封闭时间戳（closed timestamps）。如果追随者在封闭的时间戳上有值，追随者就允许读取该值。
+
+Kafka 允许消费来自追随者服务器的消息。追随者知道领导者的[高水位标记（High-Water Mark）](high-water-mark.md)。在 Kafka 的设计中，追随者不会等待最新的更新，而是会给消费者返回 OFFSET_NOT_AVAILABLE 错误，期待消费者进行重试。

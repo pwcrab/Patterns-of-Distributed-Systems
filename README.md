@@ -10,7 +10,7 @@
 
 * [一致性内核（Consistent Core）](content/consistent-core.md)
 * 固定分区（Fixed Partitions）
-* 追随者读取（Follower Reads）
+* [追随者读取（Follower Reads）](content/follower-reads.md)
 * [世代时钟（Generation Clock）](content/generation-clock.md)
 * Gossip 传播（Gossip Dissemination）
 * [心跳（HeartBeat）](content/heartbeat.md)

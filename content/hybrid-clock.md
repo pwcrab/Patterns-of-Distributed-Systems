@@ -152,3 +152,63 @@ class Client…
       assertTrue(server2WrittenAt.compareTo(server1WrittenAt) > 0);
   }
 ```
+
+### 使用混合时钟进行多版本存储
+
+在键值存储中进行值的存储时，可以采用混合时间戳作为版本。值的存储在[有版本的值（Versioned Value）](versioned-value.md)中讨论过。
+
+```java
+class HybridClockReplicatedKVStore…
+
+  private Response applySetValueCommand(VersionedSetValueCommand setValueCommand) {
+      mvccStore.put(setValueCommand.getKey(), setValueCommand.timestamp, setValueCommand.value);
+      Response response = Response.success(setValueCommand.timestamp);
+      return response;
+  }
+class HybridClockMVCCStore…
+
+  ConcurrentSkipListMap<HybridClockKey, String> kv = new ConcurrentSkipListMap<>();
+
+  public void put(String key, HybridTimestamp version, String value) {
+      kv.put(new HybridClockKey(key, version), value);
+  }
+class HybridClockKey…
+
+  public class HybridClockKey implements Comparable<HybridClockKey> {
+      private String key;
+      private HybridTimestamp version;
+
+      public HybridClockKey(String key, HybridTimestamp version) {
+          this.key = key;
+          this.version = version;
+      }
+
+      public String getKey() {
+          return key;
+      }
+
+      public HybridTimestamp getVersion() {
+          return version;
+      }
+
+      @Override
+      public int compareTo(HybridClockKey o) {
+          int keyCompare = this.key.compareTo(o.key);
+          if (keyCompare == 0) {
+              return this.version.compareTo(o.version);
+          }
+          return keyCompare;
+      }
+```
+
+这些值的读取完全是按照[有版本的值排序](versioned-value.md#%E6%9C%89%E7%89%88%E6%9C%AC%E9%94%AE%E5%80%BC%E7%9A%84%E6%8E%92%E5%BA%8F)所讨论的那样。使用混合时间戳作为键值后缀，有版本的键值就可以按照自然顺序的方式进行排列。这个实现让我们可以使用可导航的 Map API（navigable map API）获取特定版本对应的值。
+
+```java
+class HybridClockMVCCStore…
+
+  public Optional<String> get(String key, HybridTimestamp atTimestamp) {
+      Map.Entry<HybridClockKey, String> versionKeys = kv.floorEntry(new HybridClockKey(key, atTimestamp));
+      getLogger().info("Available version keys " + versionKeys + ". Reading@" + versionKeys);
+      return (versionKeys == null)? Optional.empty(): Optional.of(versionKeys.getValue());
+  }
+```

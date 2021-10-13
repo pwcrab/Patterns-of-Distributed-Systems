@@ -212,3 +212,20 @@ class HybridClockMVCCStore…
       return (versionKeys == null)? Optional.empty(): Optional.of(versionKeys.getValue());
   }
 ```
+
+### 将混合时间戳转换为日期时间
+
+通过将系统时间戳和逻辑计数合并在一起，混合时钟可以转换成实际的时间戳。正如在[混合时钟（hybrid-clock）](https://cse.buffalo.edu/tech-reports/2014-04.pdf)这篇论文中所讨论的，保留系统时间的前 48 位，而低 16 位有逻辑计数器所取代。
+
+```java
+class HybridTimestamp…
+
+  public LocalDateTime toDateTime() {
+    return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis()), ZoneOffset.UTC);
+  }
+
+  public long epochMillis() {
+    //Compact timestamp as discussed in https://cse.buffalo.edu/tech-reports/2014-04.pdf.
+    return (wallClockTime >> 16 << 16) | (ticks << 48 >> 48);
+  }
+```

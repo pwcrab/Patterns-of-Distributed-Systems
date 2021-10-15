@@ -267,3 +267,9 @@ class TransactionCoordinator…
 ```
 
 事务实现也可以使用两阶段提交协议中的准备阶段来了解每个参与的服务器所使用的最高时间戳。
+
+## 示例
+
+[mongodb](https://www.mongodb.com/) 采用混合时间戳维护其 MVCC 存储中的版本。
+
+[cockroachdb](https://www.cockroachlabs.com/docs/stable/) 采用混合时间戳维护分布式事务的因果关系。

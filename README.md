@@ -15,7 +15,7 @@
 * Gossip 传播（Gossip Dissemination）
 * [心跳（HeartBeat）](content/heartbeat.md)
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
-* 混合时钟（Hybrid Clock）
+* [混合时钟（Hybrid Clock）](content/hybrid-clock.md)
 * Lamport 时钟（Lamport Clock）
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
 * 键与值（Key And Value）

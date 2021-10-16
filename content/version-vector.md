@@ -434,7 +434,7 @@ class ClusterClient…
 
 [voldemort](https://www.project-voldemort.com/voldemort/) 按照这里描述的方式使用版本向量，其采用的基于时间戳的最后写入胜的冲突解决方案。
 
-[riak] 开始采用基于客户端 ID 的版本向量，但是，迁移到基于集群节点的版本向量，最终是点状版本向量。Riak 也支持基于系统时间戳的最后写入胜冲突解决方案。
+[riak](https://riak.com/posts/technical/vector-clocks-revisited/index.html?p=9545.html) 开始采用基于客户端 ID 的版本向量，但是，迁移到基于集群节点的版本向量，最终是点状版本向量。Riak 也支持基于系统时间戳的最后写入胜冲突解决方案。
 
 [cassandra](http://cassandra.apache.org/) 并不使用版本向量，它只支持基于系统时间戳的最后写入胜的冲突解决方案。
 

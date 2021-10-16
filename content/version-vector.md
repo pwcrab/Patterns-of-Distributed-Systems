@@ -240,8 +240,6 @@ public void put(String key, VersionedValue value) {
 ![在不同副本上的并发更新](../image/vector-clock-concurrent-updates.png)
 <center>图 2：在不同副本上的并发更新</center>
 
-Therefore the version vector based storage keeps multiple versions for any key, when the versions are considered concurrent.
-
 因此，当认为版本是并发的时候，基于存储的版本向量对于任何键值都会持有多个版本。
 
 ```java
@@ -437,8 +435,6 @@ class ClusterClient…
 [voldemort](https://www.project-voldemort.com/voldemort/) 按照这里描述的方式使用版本向量，其采用的基于时间戳的最后写入胜的冲突解决方案。
 
 [riak] 开始采用基于客户端 ID 的版本向量，但是，迁移到基于集群节点的版本向量，最终是点状版本向量。Riak 也支持基于系统时间戳的最后写入胜冲突解决方案。
-
-[cassandra] does not use version vectors, It supports only last write wins conflict resolution based on system timestamp.
 
 [cassandra](http://cassandra.apache.org/) 并不使用版本向量，它只支持基于系统时间戳的最后写入胜的冲突解决方案。
 

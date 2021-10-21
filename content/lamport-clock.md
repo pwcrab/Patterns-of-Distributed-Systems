@@ -58,3 +58,9 @@ class LamportClock…
 ```
 
 如此一来，服务器可以确保写操作的顺序是在这个请求之后，以及客户端发起请求时服务器端已经执行的任何其他动作之后。服务器会返回一个时间戳，用于将值写回给客户端。稍后，请求的客户端会使用这个时间戳向其它的服务器发起进一步的写操作。如此一来，请求的因果链就得到了维持。
+
+### 因果性、时间和 Happens-Before
+
+在一个系统中，当一个事件 A 发生在事件 B 之前，这其中可能存在因果关系。因果关系意味着，在导致 B 发生的原因中，A 可能扮演了一些角色。这种“A 发生在 B 之前（A happens before B）”的关系是通过在每个事件上附加时间戳达成的。如果 A 发生在 B 之前，附加在 A 的时间戳就会小于附加在 B 上的时间戳。但是，因为我们无法依赖于系统时间，我们需要一些方式确保这种“依赖于附加在事件上的时间戳”的 Happens-Before 关系得到维系。[Leslie Lamport](https://en.wikipedia.org/wiki/Leslie_Lamport) 在其开创性论文[《时间、时钟和事件排序（Time, Clocks and Ordering Of Events）》](https://lamport.azurewebsites.net/pubs/time-clocks.pdf)中提出了一个解决方案，使用逻辑时间戳来跟踪 Happens-Before 的关系。因此，这种使用逻辑时间错追踪因果性的技术就被称为 Lamport 时间戳。
+
+值得注意的是，在数据库中，事件是关于存储数据的。因此，Lamport 时间戳会附加到存储的值上。这非常符合有版本的存储机制，这一点我们在[有版本的值（Versioned Value）](versioned-value.md)中讨论过。

@@ -64,3 +64,52 @@ class LamportClock…
 在一个系统中，当一个事件 A 发生在事件 B 之前，这其中可能存在因果关系。因果关系意味着，在导致 B 发生的原因中，A 可能扮演了一些角色。这种“A 发生在 B 之前（A happens before B）”的关系是通过在每个事件上附加时间戳达成的。如果 A 发生在 B 之前，附加在 A 的时间戳就会小于附加在 B 上的时间戳。但是，因为我们无法依赖于系统时间，我们需要一些方式确保这种“依赖于附加在事件上的时间戳”的 Happens-Before 关系得到维系。[Leslie Lamport](https://en.wikipedia.org/wiki/Leslie_Lamport) 在其开创性论文[《时间、时钟和事件排序（Time, Clocks and Ordering Of Events）》](https://lamport.azurewebsites.net/pubs/time-clocks.pdf)中提出了一个解决方案，使用逻辑时间戳来跟踪 Happens-Before 的关系。因此，这种使用逻辑时间错追踪因果性的技术就被称为 Lamport 时间戳。
 
 值得注意的是，在数据库中，事件是关于存储数据的。因此，Lamport 时间戳会附加到存储的值上。这非常符合有版本的存储机制，这一点我们在[有版本的值（Versioned Value）](versioned-value.md)中讨论过。
+
+### 一个样例键值存储
+
+考虑一个有多台服务器节点的简单键值存储的例子。它包含两台服务器，蓝色（Blue）和绿色（Green）。每台服务器负责存储一组特定的键值。这是一个典型的场景，数据划分到一组服务器上。值存储为[有版本的值（Versioned Value）](versioned-value.md)，其版本号为 Lamport 时间戳。
+
+![一致性内核](../image/two-servers-each-with-specific-key-range.png)
+<center>图1：两台服务器，各自负责特定的键值</center>
+
+接收服务器会比较并更新自己的时间戳，然后，用它写入一个有版本的键值和值。
+
+```java
+class Server…
+
+  public int write(String key, String value, int requestTimestamp) {
+      //update own clock to reflect causality
+      int writeAtTimestamp = clock.tick(requestTimestamp);
+      mvccStore.put(new VersionedKey(key, writeAtTimestamp), value);
+      return writeAtTimestamp;
+  }
+```
+
+用于写入值的时间戳会返回给客户端。通过更新自己的时间戳，客户端会跟踪最大的时间戳。它在发出进一步写入请求时会使用这个时间戳。
+
+
+```java
+class Client…
+
+  LamportClock clock = new LamportClock(1);
+  public void write() {
+      int server1WrittenAt = server1.write("name", "Alice", clock.getLatestTime());
+      clock.updateTo(server1WrittenAt);
+
+      int server2WrittenAt = server2.write("title", "Microservices", clock.getLatestTime());
+      clock.updateTo(server2WrittenAt);
+
+      assertTrue(server2WrittenAt > server1WrittenAt);
+  }
+```
+
+请求序列看起来是下面这样：
+
+![一致性内核](../image/lamport-clock-request-sequence.png)
+<center>图1：两台服务器，各自负责特定的键值</center>
+
+在[领导者和追随者（Leader and Followers）](leader-and-followers.md)组中，甚至可以用同样的技术在客户端和领导者之间的通信，每组负责一组特定的键值。客户端向该组的领导者发送请求，如上所述。Lamport 时钟的实例由该组的领导者维护，其更新方式与上一节讨论的完全相同。
+
+
+![一致性内核](../image/different-keys-different-servers.png)
+<center>图3：不同的领导者追随者组存储不同的键值</center>

@@ -69,7 +69,7 @@ class LamportClock…
 
 考虑一个有多台服务器节点的简单键值存储的例子。它包含两台服务器，蓝色（Blue）和绿色（Green）。每台服务器负责存储一组特定的键值。这是一个典型的场景，数据划分到一组服务器上。值存储为[有版本的值（Versioned Value）](versioned-value.md)，其版本号为 Lamport 时间戳。
 
-![一致性内核](../image/two-servers-each-with-specific-key-range.png)
+![两台服务器，各自负责特定的键值](../image/two-servers-each-with-specific-key-range.png)
 <center>图1：两台服务器，各自负责特定的键值</center>
 
 接收服务器会比较并更新自己的时间戳，然后，用它写入一个有版本的键值和值。
@@ -105,11 +105,18 @@ class Client…
 
 请求序列看起来是下面这样：
 
-![一致性内核](../image/lamport-clock-request-sequence.png)
-<center>图1：两台服务器，各自负责特定的键值</center>
+![两台服务器，各自负责特定的键值](../image/lamport-clock-request-sequence.png)
+<center>图2：两台服务器，各自负责特定的键值</center>
 
 在[领导者和追随者（Leader and Followers）](leader-and-followers.md)组中，甚至可以用同样的技术在客户端和领导者之间的通信，每组负责一组特定的键值。客户端向该组的领导者发送请求，如上所述。Lamport 时钟的实例由该组的领导者维护，其更新方式与上一节讨论的完全相同。
 
 
-![一致性内核](../image/different-keys-different-servers.png)
+![不同的领导者追随者组存储不同的键值](../image/different-keys-different-servers.png)
 <center>图3：不同的领导者追随者组存储不同的键值</center>
+
+### 部分有序
+
+使用 Lamport 时钟存储的值只能是[部分有序的](https://en.wikipedia.org/wiki/Partially_ordered_set)。如果两个客户端在两台单独的服务器上存储值，时间戳的值是不能用于跨服务器进行值排序的。在下面这个例子里，Bob 在绿色服务器上存储的标题，其时间戳是 2。但是，这并不能决定 Bob 存储的标题是在 Alice 在蓝色服务器存储名字之前还是之后。
+
+![部分有序](../image/two-clients-two-separate-servers.png)
+<center>图4：部分有序</center>

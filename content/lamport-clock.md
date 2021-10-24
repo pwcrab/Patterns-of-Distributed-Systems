@@ -120,3 +120,32 @@ class Client…
 
 ![部分有序](../image/two-clients-two-separate-servers.png)
 <center>图4：部分有序</center>
+
+### 单一服务器/领导者更新值
+
+对一个领导者追随者服务器组而言，领导者总是负责存储值，其基本实现已经在[有版本的值（Versioned Value）](versioned-value.md)中讨论过，它足以维持所需的因果性。
+
+![单一领导者追随者组进行键值存储](../image/single-servergroup-kvstore.png)
+<center>图 5：单一领导者追随者组进行键值存储</center>
+
+在这种情况下，键值存储会保持一个整数的版本计数器。每次从预写日志中应用了写入命令，版本计数器就要递增。然后，用递增过的版本计数器构建一个新的键值。只有领导者负责递增版本计数器，追随者使用相同的版本号。
+
+```java
+class ReplicatedKVStore…
+
+  int version = 0;
+  MVCCStore mvccStore = new MVCCStore();
+
+  @Override
+  public CompletableFuture<Response> put(String key, String value) {
+      return server.propose(new SetValueCommand(key, value));
+  }
+
+  private Response applySetValueCommand(SetValueCommand setValueCommand) {
+      getLogger().info("Setting key value " + setValueCommand);
+      version = version + 1;
+      mvccStore.put(new VersionedKey(setValueCommand.getKey(), version), setValueCommand.getValue());
+      Response response = Response.success(version);
+      return response;
+  }
+```

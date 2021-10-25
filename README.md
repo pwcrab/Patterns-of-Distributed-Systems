@@ -16,7 +16,7 @@
 * [心跳（HeartBeat）](content/heartbeat.md)
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
 * [混合时钟（Hybrid Clock）](content/hybrid-clock.md)
-* Lamport 时钟（Lamport Clock）
+* [Lamport 时钟（Lamport Clock）](content/lamport-clock.md)
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
 * 键与值（Key And Value）
 * [领导者和追随者（Leader and Followers）](content/leader-and-followers.md)

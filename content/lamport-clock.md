@@ -149,3 +149,9 @@ class ReplicatedKVStore…
       return response;
   }
 ```
+
+## 示例
+
+像 [mongodb](https://www.mongodb.com/) 和 [cockroachdb](https://www.cockroachlabs.com/docs/stable/) 采用了 Lamport 时钟的变体实现了 [mvcc](https://en.wikipedia.org/wiki/Multiversion_concurrency_control) 存储。
+
+[世代时钟（Generation Clock）](generation-clock.md)是 Lamport 时钟的一个例子。

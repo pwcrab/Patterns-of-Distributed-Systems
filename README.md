@@ -16,21 +16,22 @@
 * [心跳（HeartBeat）](content/heartbeat.md)
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
 * [混合时钟（Hybrid Clock）](content/hybrid-clock.md)
-* [Lamport 时钟（Lamport Clock）](content/lamport-clock.md)
 * [幂等接收者（Idempotent Receiver）](content/idempotent-receiver.md)
-* 键与值（Key And Value）
+* 键值与值（Key And Value）
+* [Lamport 时钟（Lamport Clock）](content/lamport-clock.md)
 * [领导者和追随者（Leader and Followers）](content/leader-and-followers.md)
 * [租约（Lease）](content/lease.md)
 * [低水位标记（Low-Water Mark）](content/low-water-mark.md)
 * Paxos
 * [Quorum](content/quorum.md)
-* [请求管道（Request Pipeline）](content/request-pipeline.md)
 * 可复制日志（Replicated Log）
 * 批量请求（Request Batch）
+* [请求管道（Request Pipeline）](content/request-pipeline.md)
 * [分段日志（Segmented Log）](content/segmented-log.md)
 * [单一 Socket 通道（Single Socket Channel）](content/single-socket-channel.md)
 * [单一更新队列（Singular Update Queue）](content/singular-update-queue.md)
 * [状态监控（State Watch）](content/state-watch.md)
+* 两阶段提交（Two Phase Commit）
 * [版本向量（Version Vector）](content/version-vector.md)
 * [有版本的值（Versioned Values）](content/versioned-value.md)
 * [预写日志（Write-Ahead Log）](content/write-ahead-log.md)

@@ -66,6 +66,8 @@
 | head of line blocking | 队首阻塞  |
 | coordinator | 协调者 |
 | lag | 滞后 |
+| fanout | 扇出 |
+| incoming | 传入 |
 
 
 

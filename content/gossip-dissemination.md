@@ -188,3 +188,110 @@ public void merge(Map<NodeId, NodeState> otherState) {
 ```
 
 每隔一秒，这个过程就会在集群的每个节点上发生一次，每次都会选择不同的节点进行状态交换。
+
+### 避免不必要的状态交换
+
+上面的代码例子显示，在 Gossip 消息里发送了节点的完整状态。对于新加入的节点，这是没问题的，但一旦状态是最新的，就没有必要发送完整状态了。集群节点只需要发送自上个 Gossip 消息以来的状态变化。为了实现这一点，每个节点都维护着一个版本号，每当本地添加了一个新的元数据条目，这个版本就会递增一次。
+
+```java
+class Gossip…
+
+  private int gossipStateVersion = 1;
+
+
+  private int incremenetVersion() {
+      return gossipStateVersion++;
+  }
+```
+
+集群元数据的每个值都维护有一个版本号。这就是[有版本的值（Versioned Value）](versioned-value.md)这个模式的一个例子。
+
+```java
+class VersionedValue…
+
+  int version;
+  String value;
+
+  public VersionedValue(String value, int version) {
+      this.version = version;
+      this.value = value;
+  }
+
+  public int getVersion() {
+      return version;
+  }
+
+  public String getValue() {
+      return value;
+  }
+```
+
+之后，每个 Gossip 循环都可以交换从特定版本开始的状态。
+
+```java
+class Gossip…
+
+  private void sendKnownVersions(InetAddressAndPort gossipTo) throws IOException {
+      Map<NodeId, Integer> maxKnownNodeVersions = getMaxKnownNodeVersions();
+      RequestOrResponse knownVersionRequest = new RequestOrResponse(RequestId.GossipVersions.getId(),
+              JsonSerDes.serialize(new GossipStateVersions(maxKnownNodeVersions)), 0);
+      SocketClient<RequestOrResponse> socketClient = new SocketClient(gossipTo);
+      byte[] knownVersionResponseBytes = socketClient.blockingSend(knownVersionRequest);
+  }
+
+  private Map<NodeId, Integer> getMaxKnownNodeVersions() {
+      return clusterMetadata.entrySet()
+              .stream()
+              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().maxVersion()));
+  }
+class NodeState…
+
+  public int maxVersion() {
+      return values.values().stream().map(v -> v.getVersion()).max(Comparator.naturalOrder()).orElse(0);
+  }
+```
+
+再之后，接收节点只会把版本号大于请求中版本号的那些值发送出去。
+
+```java
+class Gossip…
+
+  Map<NodeId, NodeState> getMissingAndNodeStatesHigherThan(Map<NodeId, Integer> nodeMaxVersions) {
+      Map<NodeId, NodeState> delta = new HashMap<>();
+      delta.putAll(higherVersionedNodeStates(nodeMaxVersions));
+      delta.putAll(missingNodeStates(nodeMaxVersions));
+      return delta;
+  }
+
+  private Map<NodeId, NodeState> missingNodeStates(Map<NodeId, Integer> nodeMaxVersions) {
+      Map<NodeId, NodeState> delta = new HashMap<>();
+      List<NodeId> missingKeys = clusterMetadata.keySet().stream().filter(key -> !nodeMaxVersions.containsKey(key)).collect(Collectors.toList());
+      for (NodeId missingKey : missingKeys) {
+          delta.put(missingKey, clusterMetadata.get(missingKey));
+      }
+      return delta;
+  }
+
+  private Map<NodeId, NodeState> higherVersionedNodeStates(Map<NodeId, Integer> nodeMaxVersions) {
+      Map<NodeId, NodeState> delta = new HashMap<>();
+      Set<NodeId> keySet = nodeMaxVersions.keySet();
+      for (NodeId node : keySet) {
+          Integer maxVersion = nodeMaxVersions.get(node);
+          NodeState nodeState = clusterMetadata.get(node);
+          if (nodeState == null) {
+              continue;
+          }
+          NodeState deltaState = nodeState.statesGreaterThan(maxVersion);
+          if (!deltaState.isEmpty()) {
+              delta.put(node, deltaState);
+          }
+      }
+      return delta;
+  }
+```
+
+[cassandra](http://cassandra.apache.org/) 的 Gossip 实现通过三次握手优化了状态交换，接收 Gossip 消息的节点也会发出它在发送者那里所需的版本，以及它返回的元数据。然后，发送者立即在应答中给出了请求的元数据。这样就避免原本需要的额外消息。
+
+[cockroachdb](https://www.cockroachlabs.com/docs/stable/) 使用的 Gossip 协议维护每个相连节点的状态。对每个连接来说，它都维护着发送给那个节点最后的版本，以及从那个节点接收到的版本。这是为了让它能够发送“从最后发送的版本以来的值”，以及请求“从最后收到版本开始的状态”。
+
+还可以使用其它的一些高效的替代方案，比如，发送整个状态集的哈希值，如果哈希值相同，则什么都不做。

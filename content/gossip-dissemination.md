@@ -295,3 +295,24 @@ class Gossip…
 [cockroachdb](https://www.cockroachlabs.com/docs/stable/) 使用的 Gossip 协议维护每个相连节点的状态。对每个连接来说，它都维护着发送给那个节点最后的版本，以及从那个节点接收到的版本。这是为了让它能够发送“从最后发送的版本以来的值”，以及请求“从最后收到版本开始的状态”。
 
 还可以使用其它的一些高效的替代方案，比如，发送整个状态集的哈希值，如果哈希值相同，则什么都不做。
+
+### Gossip 节点选择的标准
+
+集群节点可以随机选择节点发送 Gossip 消息。下面是一个用 Java 实现的例子，使用了 java.util.Random：
+
+```java
+class Gossip…
+
+  private Random random = new Random();
+  private InetAddressAndPort pickRandomNode(List<InetAddressAndPort> knownClusterNodes) {
+      int randomNodeIndex = random.nextInt(knownClusterNodes.size());
+      InetAddressAndPort gossipTo = knownClusterNodes.get(randomNodeIndex);
+      return gossipTo;
+  }
+```
+
+还可以有其它的考量，比如，选择之前联系最少的节点。比如，[Cockroachdb](https://github.com/cockroachdb/cockroach/blob/master/docs/design.md) 的 Gossip 协议就是这么选择节点的。
+
+还存在一些[感知网络拓扑（network-topology-aware）](https://dl.acm.org/doi/10.1109/TPDS.2006.85)的 Gossip 目标选择的方式。
+
+所有这些方法都可以以模块化的方式实现在 pickRandomNode() 方法里。

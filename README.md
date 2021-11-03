@@ -12,7 +12,7 @@
 * 固定分区（Fixed Partitions）
 * [追随者读取（Follower Reads）](content/follower-reads.md)
 * [世代时钟（Generation Clock）](content/generation-clock.md)
-* Gossip 传播（Gossip Dissemination）
+* [Gossip 传播（Gossip Dissemination）](content/gossip-dissemination.md)
 * [心跳（HeartBeat）](content/heartbeat.md)
 * [高水位标记（High-Water Mark）](content/high-water-mark.md)
 * [混合时钟（Hybrid Clock）](content/hybrid-clock.md)

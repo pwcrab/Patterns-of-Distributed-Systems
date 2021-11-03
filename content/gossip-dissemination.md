@@ -330,3 +330,13 @@ class Gossip…
 在节点崩溃或重启的情况下，有版本的值就不能很好的运作了，因为所有的内存状态都会丢失。更重要的是，对于同样的键值，节点可能会有不同的值。比如，集群节点以不同的 IP 地址和端口启动，或是以不同配置启动。[世代时钟（Generation Clock）](generation-clock.md)可以用来标记每个值的世代，因此，当元数据状态发送给一个随机的集群节点，接收的节点就不仅可以凭借版本号，还可以用世代信息检测变化。
 
 值得注意的是，对于 Gossip 协议的工作而言，这个机制并非必要的。但在实践中，这个实现能够确保状态变化得到正确地跟踪。
+
+## 示例
+
+[cassandra](http://cassandra.apache.org/) 使用 Gossip 协议处理集群节点的分组成员和失效检测。每个集群节点的元数据，诸如分配给每个集群节点的令牌，也使用 Gossip 协议进行传输。
+
+[consul](https://www.consul.io/) 使用 [swim-gossip](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf) 协议处理 consul 代理的分组成员和失效检测。
+
+[cockroachdb](https://www.cockroachlabs.com/docs/stable/) 使用 Gossip 协议传播节点的元数据。
+
+像 [Hyperledger Fabric](https://hyperledger-fabric.readthedocs.io/en/release-2.2/gossip.html) 这样的区块链实现会使用 Gossip 协议处理分组成员以及发送账本的元数据。

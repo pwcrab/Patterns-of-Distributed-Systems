@@ -4,7 +4,7 @@
 
 https://martinfowler.com/articles/patterns-of-distributed-systems/follower-reads.html
 
-为来自追随者的读取请求提供服务，获取更好的吞吐和更低的延迟。
+由追随者为读取请求提供服务，获取更好的吞吐和更低的延迟。
 
 **2021.7.1**
 

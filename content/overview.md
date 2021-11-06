@@ -113,6 +113,10 @@ Quorum 保证了我们拥有足够的数据副本，以拯救一些服务器的�
 
 ![分布式系统模式](../image/patterns-of-distributed-system.svg)
 
+### Kubernetes 或 Kafka 的控制平面
+
+像 [Kubernetes](https://kubernetes.io/) 或 [Kafka](https://kafka.apache.org/) 这样产品的架构是围绕着一个强一致的元数据存储构建起来的。我们可以把它理解成一个模式序列。[一致性内核（Consistent Core）](consistent-core.md)用作一个强一致、可容错的元数据存储。[租约（Lease）](lease.md)用于实现集群节点的分组成员和失效检测。当集群节点失效或更新其元数据时，其它集群节点可以通过[状态监控（State Watch）](state-watch.md)获得通知。在网络失效重试的情况下，[一致性内核（Consistent Core）](consistent-core.md)的实现可以用[幂等接收者（Idempotent Receiver）]忽略集群节点发送的重复请求。[一致性内核（Consistent Core）](consistent-core.md)可以采用可复制的 WAL，上一节已经描述过这个模式序列了。
+
 这样，以通用的形式理解问题以及其可复用的解决方案，有助于理解整个系统的构造块。
 
 ## 下一步

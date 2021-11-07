@@ -117,6 +117,10 @@ Quorum 保证了我们拥有足够的数据副本，以拯救一些服务器的�
 
 像 [Kubernetes](https://kubernetes.io/) 或 [Kafka](https://kafka.apache.org/) 这样产品的架构是围绕着一个强一致的元数据存储构建起来的。我们可以把它理解成一个模式序列。[一致性内核（Consistent Core）](consistent-core.md)用作一个强一致、可容错的元数据存储。[租约（Lease）](lease.md)用于实现集群节点的分组成员和失效检测。当集群节点失效或更新其元数据时，其它集群节点可以通过[状态监控（State Watch）](state-watch.md)获得通知。在网络失效重试的情况下，[一致性内核（Consistent Core）](consistent-core.md)的实现可以用[幂等接收者（Idempotent Receiver）]忽略集群节点发送的重复请求。[一致性内核（Consistent Core）](consistent-core.md)可以采用可复制的 WAL，上一节已经描述过这个模式序列了。
 
+### 逻辑时间戳的使用
+
+各种类型逻辑时间戳的使用也可以看作是一个模式序列。各种产品可以使用 [Gossip 传播（Gossip Dissemination）](gossip-dissemination.md)或[一致性内核（Consistent Core）](consistent-core.md)处理群集节点的分组成员和失效检测。数据存储使用[有版本的值（Versioned Value）](versioned-value.md)就能够确定哪个值是最新的。如果有单台服务器负责更新值，或是使用了[领导者和追随者（Leader and Followers）](leader-and-followers.md)，可以使用 [Lamport 时钟（Lamport Clock）](lamport-clock.md)当做[有版本的值（Versioned Value）](versioned-value.md) 中的版本。当时间戳需要从一天中时间中推导出来时，可以使用[混合时钟（Hybrid Clock）](hybrid-clock.md)，替代简单的 Lamport 时钟（Lamport Clock）。如果允许多台服务器处理客户端请求，更新同样的值，可以使用[版本向量（Version Vector）](version-vector.md)，这样能够检测出在不同集群节点上的并发写入。
+
 这样，以通用的形式理解问题以及其可复用的解决方案，有助于理解整个系统的构造块。
 
 ## 下一步
@@ -128,5 +132,3 @@ Quorum 保证了我们拥有足够的数据副本，以拯救一些服务器的�
 * 复制与一致性
 * 存储
 * 处理
-
-

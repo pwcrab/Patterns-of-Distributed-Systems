@@ -111,15 +111,19 @@ Quorum 保证了我们拥有足够的数据副本，以拯救一些服务器的�
 
 为了提供持久性的保证，要使用[预写日志（Write-Ahead Log）](write-ahead-log.md)。使用[分段日志（Segmented Log）](segmented-log.md)可以将与写日志分成多个段。这么有助于实现日志的清理，通常这会采用[低水位标记（Low-Water Mark）](low-water-mark.md)进行处理。通过将预写日志复制到多个服务器上，失效容忍性就得到了保障。在服务器间复制由[领导者和追随者（Leader and Followers）](leader-and-followers.md)保障。[Quorum](quorum.md) 用于更新[高水位标记（High Water Mark）](high-water-mark.md)，以决定哪些值对客户端可见。所有的请求都严格按照顺序进行处理，这可以通过[单一更新队列（Singular Update Queue）](singular-update-queue.md)实现。领导者发送请求给追随者时，使用[单一 Socket 通道（Single Socket Channel）](single-socket-channel.md)就可以保证顺序。要在单一 Socket 通道上优化吞吐和延迟，可以使用[请求管道（Request Pipeline）](request-pipeline.md)。追随者通过接受来自领导者的[心跳（HeartBeat）](heartbeat.md)以确定领导者的可用性。如果领导者因为网络分区的原因，临时在集群中失联，可以使用[世代时钟（Generation Clock）](generation-clock.md)检测出来。如果只由领导者服务所有的请求，它就可能会过载。当客户端是只读的，而且能够容忍读取到陈旧的值，追随者服务器也可以提供服务。[追随者读取（Follower Reads）](follower-reads.md)就允许由追随者服务器对读取请求提供服务。
 
-![分布式系统模式](../image/patterns-of-distributed-system.svg)
+![实现共识的模式序列](../image/pattern-sequence-for-implementing-consensus.png)
 
 ### Kubernetes 或 Kafka 的控制平面
 
 像 [Kubernetes](https://kubernetes.io/) 或 [Kafka](https://kafka.apache.org/) 这样产品的架构是围绕着一个强一致的元数据存储构建起来的。我们可以把它理解成一个模式序列。[一致性内核（Consistent Core）](consistent-core.md)用作一个强一致、可容错的元数据存储。[租约（Lease）](lease.md)用于实现集群节点的分组成员和失效检测。当集群节点失效或更新其元数据时，其它集群节点可以通过[状态监控（State Watch）](state-watch.md)获得通知。在网络失效重试的情况下，[一致性内核（Consistent Core）](consistent-core.md)的实现可以用[幂等接收者（Idempotent Receiver）]忽略集群节点发送的重复请求。[一致性内核（Consistent Core）](consistent-core.md)可以采用可复制的 WAL，上一节已经描述过这个模式序列了。
 
+![Kubernetes 或 Kafka 的控制平面](../image/kubernetes-or-kafka-control-plane.png)
+
 ### 逻辑时间戳的使用
 
 各种类型逻辑时间戳的使用也可以看作是一个模式序列。各种产品可以使用 [Gossip 传播（Gossip Dissemination）](gossip-dissemination.md)或[一致性内核（Consistent Core）](consistent-core.md)处理群集节点的分组成员和失效检测。数据存储使用[有版本的值（Versioned Value）](versioned-value.md)就能够确定哪个值是最新的。如果有单台服务器负责更新值，或是使用了[领导者和追随者（Leader and Followers）](leader-and-followers.md)，可以使用 [Lamport 时钟（Lamport Clock）](lamport-clock.md)当做[有版本的值（Versioned Value）](versioned-value.md) 中的版本。当时间戳需要从一天中时间中推导出来时，可以使用[混合时钟（Hybrid Clock）](hybrid-clock.md)，替代简单的 Lamport 时钟（Lamport Clock）。如果允许多台服务器处理客户端请求，更新同样的值，可以使用[版本向量（Version Vector）](version-vector.md)，这样能够检测出在不同集群节点上的并发写入。
+
+![逻辑时间戳的使用](../image/logical-timestamp-usage.png)
 
 这样，以通用的形式理解问题以及其可复用的解决方案，有助于理解整个系统的构造块。
 

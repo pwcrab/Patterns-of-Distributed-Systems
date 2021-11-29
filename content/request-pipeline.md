@@ -14,7 +14,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/request-pipeli
 
 ## 解决方案
 
-节点向另外的节点发送请求，无需等待之前请求的应答。只要创建创建两个单独的线程就可以做到，一个在网络通道上发送请求，一个从网络通道上接受应答。
+节点向另外的节点发送请求，无需等待之前请求的应答。只要创建两个单独的线程就可以做到，一个在网络通道上发送请求，一个从网络通道上接受应答。
 
 ![请求管道](../image/single-socket-channel.png)
 <center>图1：请求管道</center>

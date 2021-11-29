@@ -10,7 +10,7 @@ https://martinfowler.com/articles/patterns-of-distributed-systems/single-socket-
 
 ## 问题
 
-使用[领导者和追随者（Leader and Followers）](leader-and-followers.md)时，我们需要确保在领导者和各个追随者之间的消息保持有序，如果有消息丢失，需要重试机制。我们需要做到这一点，还要保证保持新连接的成本才足够低，开启新连接才不会增加系统的延迟。
+使用[领导者和追随者（Leader and Followers）](leader-and-followers.md)时，我们需要确保在领导者和各个追随者之间的消息保持有序，如果有消息丢失，需要重试机制。我们需要做到这一点，还要保证保持新连接的成本足够低，开启新连接才不会增加系统的延迟。
 
 ## 解决方案
 

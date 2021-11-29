@@ -134,7 +134,7 @@ public class WalRequestConsumer implements Consumer<Message<RequestOrResponse>> 
 
     private void startHandling() { this.walWriterQueue.start(); }
 ```
-消费者的 accept 方法接到这些消息，将它们放入到队列里，在这些消息处理之后，发出一个应答。这个方法在调用者线程运行，允许多个调用者同事调用 accept 方法。
+消费者的 accept 方法接到这些消息，将它们放入到队列里，在这些消息处理之后，发出一个应答。这个方法在调用者线程运行，允许多个调用者同时调用 accept 方法。
 
 ```java
 @Override
